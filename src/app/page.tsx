@@ -26,6 +26,8 @@ import {
   previousNightChecklistFor,
   risksForDate,
 } from '@/lib/trip';
+import { PlanSwitcher } from '@/components/PlanSwitcher';
+import { useDayPlan } from '@/lib/planState';
 import { criticalTasks } from '@/data/tasks';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -43,20 +45,28 @@ export default function DashboardPage() {
   }, []);
 
   if (!today) return <div className="p-5 text-sm text-ink-faint">載入中…</div>;
+  return <Dashboard today={today} nowMin={nowMin} />;
+}
 
+function Dashboard({ today, nowMin }: { today: string; nowMin: number }) {
   const focusDate = currentTripDate(today);
   const day = getDay(focusDate);
   const beforeTrip = today < TRIP_START;
   const afterTrip = today > TRIP_END;
   const countdown = daysBetween(today, TRIP_START);
 
-  const items = itemsForDate(focusDate);
-  const next = nextItemOfDay(focusDate, nowMin);
-  const nextTransport = nextTransportOfDay(focusDate, nowMin);
+  // 條件式行程：首頁要顯示目前生效的那一套
+  const plan = useDayPlan(focusDate);
+  const nextDay = nextDateOf(focusDate);
+  const nextDayPlan = useDayPlan(nextDay);
+
+  const items = itemsForDate(focusDate, plan.activePlanId);
+  const next = nextItemOfDay(focusDate, nowMin, plan.activePlanId);
+  const nextTransport = nextTransportOfDay(focusDate, nowMin, plan.activePlanId);
   const stay = accommodationOfDay(focusDate);
-  const risks = risksForDate(focusDate);
-  const fallback = badWeatherFallbackFor(focusDate);
-  const tonight = previousNightChecklistFor(nextDateOf(focusDate));
+  const risks = risksForDate(focusDate, plan.activePlanId);
+  const fallback = badWeatherFallbackFor(focusDate, plan.activePlanId);
+  const tonight = previousNightChecklistFor(nextDay, nextDayPlan.activePlanId);
   const openCritical = criticalTasks;
 
   return (
@@ -94,6 +104,9 @@ export default function DashboardPage() {
       </header>
 
       <div className="space-y-7 px-5 py-7">
+        {/* -------------------------------------------- 條件式方案 */}
+        {plan.mode !== 'none' && <PlanSwitcher date={focusDate} compact />}
+
         {/* -------------------------------------------- Critical 待辦 */}
         <Section title="出發前必辦" action={{ href: '/tasks', label: '全部待辦' }}>
           <div className="card-alert p-4">
@@ -206,15 +219,11 @@ export default function DashboardPage() {
 
         {/* -------------------------------------------- 今晚要做的事 */}
         {tonight.length > 0 && (
-          <Section title={`今晚要做（為 ${shortDate(nextDateOf(focusDate))} 做準備）`}>
+          <Section title={`今晚要做（為 ${shortDate(nextDay)} 做準備）`}>
             <div className="card p-4">
               <div className="divide-y divide-stone2-100">
                 {tonight.map((c, idx) => (
-                  <CheckItem
-                    key={c}
-                    storageKey={`pn.${nextDateOf(focusDate)}.${idx}`}
-                    label={c}
-                  />
+                  <CheckItem key={c} storageKey={`pn.${nextDay}.${idx}`} label={c} />
                 ))}
               </div>
             </div>

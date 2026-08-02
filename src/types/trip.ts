@@ -124,6 +124,26 @@ export interface FerryTerminalInfo {
   operatorNote?: string;
 }
 
+/* ------------------------------------------------------ 條件式方案 */
+
+/**
+ * 一日之內的替代方案。
+ * 例如 8/16 天氣好就先走 Trælanípan（conditionalPlan），
+ * 天氣差就直接進 Tórshavn（fallbackPlan）。
+ */
+export interface DayPlan {
+  id: string;
+  /** 完整名稱，顯示在方案卡上 */
+  label: string;
+  /** 按鈕文字 */
+  buttonLabel: string;
+  description: string;
+  /** 什麼情況下適用這個方案 */
+  activationConditions?: string[];
+  /** 屬於這個方案的行程項目 id */
+  itemIds: string[];
+}
+
 /* ---------------------------------------------------------------- 行程 */
 
 export interface ItineraryItem {
@@ -147,6 +167,17 @@ export interface ItineraryItem {
   relatedBookingId?: string;
   ferry?: FerryTerminalInfo;
   isPrivate?: boolean;
+  /**
+   * 這個項目屬於哪一個 DayPlan。
+   * 未設定 = 不論選哪個方案都會出現（例如航班、取車）。
+   */
+  planId?: string;
+  /**
+   * 這個活動可以在不同日期完成，完成狀態共用一個旗標。
+   * 例如 Trælanípan 出現在 8/16 與 8/22，兩邊共用 'traelanipa'。
+   * 一旦標記完成，另一天就不再顯示為必做行程。
+   */
+  completedOnAlternateDate?: string;
   /** 預設 true；設 false 代表不進主要時間軸 */
   displayInTimeline?: boolean;
   /** 預設 true */
@@ -178,6 +209,24 @@ export interface TripDay {
   previousNightChecklist?: string[];
   /** 整天行程是否可與其他日對調 */
   weatherSwappable?: boolean;
+
+  /* --------------------------------------------------- 條件式行程 */
+
+  /** 主要方案（Plan A）。有設就代表這天是條件式行程。 */
+  conditionalPlan?: DayPlan;
+  /** 備案（Plan B） */
+  fallbackPlan?: DayPlan;
+  /**
+   * 方案由使用者手動選擇。
+   * 值是 localStorage 的 key 後綴，例如 '2026-08-16'。
+   */
+  planStorageKey?: string;
+  /**
+   * 方案由某個活動的完成狀態自動決定，不需使用者選。
+   * 值是 completedOnAlternateDate 的旗標名。
+   * 未完成 → conditionalPlan；已完成 → fallbackPlan。
+   */
+  planDeterminedByFlag?: string;
 }
 
 /* -------------------------------------------------------------- 訂位 */

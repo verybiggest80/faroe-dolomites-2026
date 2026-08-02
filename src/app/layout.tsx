@@ -1,6 +1,10 @@
 import { BottomNav } from '@/components/BottomNav';
 import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar';
-import { assertAllLocationsMappable, assertBackupIsolation } from '@/lib/trip';
+import {
+  assertAllLocationsMappable,
+  assertBackupIsolation,
+  assertPlanIntegrity,
+} from '@/lib/trip';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
@@ -32,7 +36,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // 開發時檢查：備用票沒外洩、所有地點都能跳 Google Maps
   if (process.env.NODE_ENV !== 'production') {
-    const problems = [...assertBackupIsolation(), ...assertAllLocationsMappable()];
+    const problems = [
+      ...assertBackupIsolation(),
+      ...assertAllLocationsMappable(),
+      ...assertPlanIntegrity(),
+    ];
     if (problems.length > 0) {
       // eslint-disable-next-line no-console
       console.warn('[資料檢查] 發現問題：\n' + problems.join('\n'));

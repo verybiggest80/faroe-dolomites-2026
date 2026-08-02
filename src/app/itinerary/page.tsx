@@ -53,6 +53,11 @@ export default function ItineraryPage() {
                 {day.weatherSwappable && (
                   <span className="chip border-dolo-200 bg-dolo-50 text-dolo-700">可換日</span>
                 )}
+                {day.conditionalPlan && (
+                  <span className="chip border-faroe-200 bg-faroe-50 text-faroe-700">
+                    {day.planDeterminedByFlag ? '連動 8/16' : '兩案擇一'}
+                  </span>
+                )}
               </div>
             </Link>
           );

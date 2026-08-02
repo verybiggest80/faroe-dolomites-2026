@@ -385,12 +385,12 @@ export const locations = L({
   },
   traelanipaReception: {
     id: 'traelanipaReception',
-    name: 'Trælanípa 步道接待處／停車場',
+    name: 'Trælanípan Trail Reception',
     address: 'Miðvágur, Vágar, Faroe Islands',
-    googleMapsQuery: 'Trælanípa Trail Reception Miðvágur',
+    googleMapsQuery: 'Trælanípan Trail Reception Miðvágur',
     region: 'faroe-islands',
     kind: 'trailhead',
-    hint: '導航到接待處，不要直接導航到懸崖座標。依現場規定支付健行費，沿正式步道行走。',
+    hint: '導航到正式接待處與停車場，不要直接導航到懸崖座標。自助健行不需預約，現場接待處付款，必須沿指定步道行走。',
   },
   bour: {
     id: 'bour',

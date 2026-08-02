@@ -1,5 +1,5 @@
 import { backupBookings, bookings, getBooking } from '@/data/bookings';
-import { itinerary, tripDays } from '@/data/itinerary';
+import { alternateDateActivities, itinerary, tripDays } from '@/data/itinerary';
 import { allLocations } from '@/data/locations';
 import { tasks } from '@/data/tasks';
 import { minutesOf, todayISO } from '@/lib/dates';
@@ -80,19 +80,41 @@ export function isVisibleOnMap(item: ItineraryItem): boolean {
   return item.displayOnMap !== false;
 }
 
-/** 依日期取得該日行程，已排序 */
-export function itemsForDate(date: string): ItineraryItem[] {
+/**
+ * 該項目在指定方案下是否要顯示。
+ * 沒有 planId 的項目（航班、取車…）不論選哪個方案都會出現。
+ */
+function matchesPlan(item: ItineraryItem, planId?: string): boolean {
+  if (!item.planId) return true;
+  return item.planId === planId;
+}
+
+/**
+ * 條件式行程的預設方案 = Plan A。
+ * 靜態產生與伺服器端一律用這個；客戶端再依 localStorage 覆寫。
+ */
+export function defaultPlanFor(date: string): string | undefined {
+  return getDay(date)?.conditionalPlan?.id;
+}
+
+/**
+ * 依日期取得該日行程，已排序。
+ * planId 未指定時使用該日的預設方案。
+ */
+export function itemsForDate(date: string, planId?: string): ItineraryItem[] {
+  const plan = planId ?? defaultPlanFor(date);
   return itinerary
-    .filter((i) => i.date === date && isVisibleInTimeline(i))
+    .filter((i) => i.date === date && isVisibleInTimeline(i) && matchesPlan(i, plan))
     .sort((a, b) => minutesOf(a.startTime) - minutesOf(b.startTime));
 }
 
 /** 該日在地圖上要顯示的所有地點（去重） */
-export function locationsForDate(date: string): TripLocation[] {
+export function locationsForDate(date: string, planId?: string): TripLocation[] {
+  const plan = planId ?? defaultPlanFor(date);
   const seen = new Set<string>();
   const out: TripLocation[] = [];
   itinerary
-    .filter((i) => i.date === date && isVisibleOnMap(i))
+    .filter((i) => i.date === date && isVisibleOnMap(i) && matchesPlan(i, plan))
     .sort((a, b) => minutesOf(a.startTime) - minutesOf(b.startTime))
     .forEach((i) => {
       [i.location, ...(i.extraLocations ?? [])].forEach((loc) => {
@@ -114,8 +136,12 @@ export function getItem(id: string): ItineraryItem | undefined {
 }
 
 /** 當日的下一個活動（依裝置時間；不在旅程中時回傳當日第一項） */
-export function nextItemOfDay(date: string, nowMinutes: number): ItineraryItem | undefined {
-  const items = itemsForDate(date);
+export function nextItemOfDay(
+  date: string,
+  nowMinutes: number,
+  planId?: string
+): ItineraryItem | undefined {
+  const items = itemsForDate(date, planId);
   if (date !== todayISO()) return items[0];
   return items.find((i) => minutesOf(i.startTime) >= nowMinutes) ?? items[items.length - 1];
 }
@@ -123,7 +149,8 @@ export function nextItemOfDay(date: string, nowMinutes: number): ItineraryItem |
 /** 當日的下一段交通 */
 export function nextTransportOfDay(
   date: string,
-  nowMinutes: number
+  nowMinutes: number,
+  planId?: string
 ): ItineraryItem | undefined {
   const transportCats = new Set([
     'flight',
@@ -133,7 +160,7 @@ export function nextTransportOfDay(
     'public_transport',
     'cable_car',
   ]);
-  const items = itemsForDate(date).filter((i) => transportCats.has(i.category));
+  const items = itemsForDate(date, planId).filter((i) => transportCats.has(i.category));
   if (date !== todayISO()) return items[0];
   return items.find((i) => minutesOf(i.startTime) >= nowMinutes) ?? items[0];
 }
@@ -146,25 +173,23 @@ export function accommodationOfDay(date: string): Booking | undefined {
 }
 
 /** 明日出發前需要今晚完成的提醒（整日層級 + 各項目層級） */
-export function previousNightChecklistFor(date: string): string[] {
+export function previousNightChecklistFor(date: string, planId?: string): string[] {
   const d = getDay(date);
   const fromDay = d?.previousNightChecklist ?? [];
-  const fromItems = itinerary
-    .filter((i) => i.date === date && isVisibleInTimeline(i))
-    .flatMap((i) => i.previousNightChecklist ?? []);
-  const ferryChecks = itinerary
-    .filter((i) => i.date === date && i.ferry)
-    .flatMap((i) => i.ferry?.previousNightChecklist ?? []);
+  const fromItems = itemsForDate(date, planId).flatMap(
+    (i) => i.previousNightChecklist ?? []
+  );
+  const ferryChecks = itemsForDate(date, planId).flatMap(
+    (i) => i.ferry?.previousNightChecklist ?? []
+  );
   return Array.from(new Set([...fromDay, ...fromItems, ...ferryChecks]));
 }
 
 /** 該日的雨天備案（整日層級 + 各項目層級） */
-export function badWeatherFallbackFor(date: string): string[] {
+export function badWeatherFallbackFor(date: string, planId?: string): string[] {
   const d = getDay(date);
   const fromDay = d?.badWeatherFallback ?? [];
-  const fromItems = itinerary
-    .filter((i) => i.date === date && isVisibleInTimeline(i))
-    .flatMap((i) => i.badWeatherFallback ?? []);
+  const fromItems = itemsForDate(date, planId).flatMap((i) => i.badWeatherFallback ?? []);
   return Array.from(new Set([...fromDay, ...fromItems]));
 }
 
@@ -176,8 +201,8 @@ export interface RiskHint {
   itemId: string;
 }
 
-export function risksForDate(date: string): RiskHint[] {
-  return itemsForDate(date).flatMap<RiskHint>((i) => {
+export function risksForDate(date: string, planId?: string): RiskHint[] {
+  return itemsForDate(date, planId).flatMap<RiskHint>((i) => {
     if (i.ferry) {
       return [
         {
@@ -252,11 +277,72 @@ export function assertBackupIsolation(): string[] {
       problems.push(`${b.id} 被待辦引用`);
   });
 
-  // 8/27 的時間軸不得出現任何 Tre Cime 停車相關項目
+  // 8/27 的時間軸不得出現停車票項目，也不得引用任何備用訂位。
+  // 註：8/27 提到「整理 Tre Cime 裝備」是隔日的準備工作，屬正常行程，不算外洩。
+  const backupIds = new Set(backupBookings.map((b) => b.id));
   itemsForDate('2026-08-27').forEach((i) => {
-    if (i.category === 'parking' || /tre cime/i.test(i.title)) {
-      problems.push(`8/27 時間軸出現不該有的項目：${i.id}`);
+    if (i.category === 'parking') {
+      problems.push(`8/27 時間軸出現停車票項目：${i.id}`);
     }
+    if (i.relatedBookingId && backupIds.has(i.relatedBookingId)) {
+      problems.push(`8/27 項目 ${i.id} 引用了備用訂位`);
+    }
+  });
+
+  return problems;
+}
+
+/**
+ * 自我檢查：條件式行程的方案定義與實際項目一致。
+ */
+export function assertPlanIntegrity(): string[] {
+  const problems: string[] = [];
+  const byId = new Map(itinerary.map((i) => [i.id, i]));
+
+  tripDays.forEach((d) => {
+    const plans = [d.conditionalPlan, d.fallbackPlan].filter(Boolean);
+    if (plans.length === 0) return;
+
+    if (!d.planStorageKey && !d.planDeterminedByFlag) {
+      problems.push(`${d.date} 有方案但沒有指定切換方式`);
+    }
+    if (d.conditionalPlan && !d.fallbackPlan) {
+      problems.push(`${d.date} 只有主要方案，缺少備案`);
+    }
+
+    plans.forEach((p) => {
+      p!.itemIds.forEach((id) => {
+        const item = byId.get(id);
+        if (!item) {
+          problems.push(`${d.date} 方案 ${p!.id} 引用了不存在的項目 ${id}`);
+          return;
+        }
+        if (item.date !== d.date) {
+          problems.push(`${p!.id} 引用了不同日期的項目 ${id}`);
+        }
+        if (item.planId !== p!.id) {
+          problems.push(`${id} 的 planId 與方案 ${p!.id} 不符`);
+        }
+      });
+    });
+
+    // 該日每個帶 planId 的項目都必須被某個方案列出
+    const declared = new Set(plans.flatMap((p) => p!.itemIds));
+    itinerary
+      .filter((i) => i.date === d.date && i.planId && !declared.has(i.id))
+      .forEach((i) => problems.push(`${i.id} 有 planId 但沒有被任何方案列出`));
+  });
+
+  // 跨日期活動：兩邊的旗標必須一致
+  Object.entries(alternateDateActivities).forEach(([flag, a]) => {
+    a.itemIds.forEach((id) => {
+      const item = byId.get(id);
+      if (!item) {
+        problems.push(`跨日期活動 ${flag} 引用了不存在的項目 ${id}`);
+      } else if (item.completedOnAlternateDate !== flag) {
+        problems.push(`${id} 缺少 completedOnAlternateDate: '${flag}'`);
+      }
+    });
   });
 
   return problems;

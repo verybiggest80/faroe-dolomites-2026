@@ -7,11 +7,21 @@ import { StatusBadges } from '@/components/StatusBadge';
 import { TicketButton } from '@/components/TicketViewer';
 import { getBooking } from '@/data/bookings';
 import { CATEGORY_ICON, CATEGORY_LABEL } from '@/lib/trip';
+import { useActivityDone } from '@/lib/planState';
 import { useLocalToggle } from '@/lib/useLocalToggle';
 import type { ItineraryItem } from '@/types/trip';
 
 export function ItineraryItemCard({ item }: { item: ItineraryItem }) {
-  const done = useLocalToggle(`item.${item.id}.done`);
+  // 一般項目：完成狀態綁在項目上
+  const local = useLocalToggle(`item.${item.id}.done`);
+  // 跨日期活動（例如 Trælanípan）：完成狀態由 8/16 與 8/22 共用
+  const shared = useActivityDone(item.completedOnAlternateDate);
+  const isShared = Boolean(item.completedOnAlternateDate);
+
+  const done = isShared
+    ? { value: shared.done, toggle: shared.toggle }
+    : { value: local.value, toggle: local.toggle };
+
   const needsAction = item.status.includes('action_required');
 
   // 有票券的項目才顯示票券按鈕
@@ -178,6 +188,15 @@ export function ItineraryItemCard({ item }: { item: ItineraryItem }) {
         >
           {done.value ? '✓ 已完成' : '標記完成'}
         </button>
+
+        {/* 跨日期活動說明 */}
+        {isShared && (
+          <p className="mt-2 text-center text-[11px] leading-relaxed text-ink-faint">
+            {done.value
+              ? '已完成 — 另一天不會再排這條步道'
+              : '標記完成後，另一天的行程會自動調整'}
+          </p>
+        )}
       </div>
     </article>
   );

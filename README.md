@@ -162,3 +162,39 @@ Kalsoy 人數已確認，不需再處理：車資已包含 1 位駕駛的船票�
 可手動對調（僅限非住宿活動）：**8/17、8/20、8/21、8/22**
 
 絕對不會自動移動：Mykines、Kalsoy、所有航班、所有住宿、Seceda、Tre Cime。
+
+## 條件式行程：8/16 ↔ 8/22 連動
+
+**8/16 有兩套方案，落地後看天氣自己選：**
+
+- **Plan A — 海上懸湖 Trælanípan**（主要方案）
+  14:20 離開機場 → 14:40–15:00 抵達接待處 → 15:00–18:00 自助健行 →
+  19:00 入住 Hilton。當晚不再安排完整舊城散步。
+  適用條件：航班取車沒延誤、天氣晴朗能見度好、無強風持續降雨、體力允許。
+- **Plan B — Tórshavn 輕鬆散步**（備案）
+  直接進 Tórshavn，Skansin／Tinganes／Á Reyni／Vágsbotnur。
+
+航班、抵達、SIXT 取車不屬於任何方案，兩套都會顯示。
+
+**8/22 隨 8/16 自動連動，不需手動切換：**
+
+- Trælanípan **未完成** → 含健行版（上午健行、下午 Bøur 與 Gásadalur）
+- Trælanípan **已完成** → 輕鬆版（Bøur、Gásadalur、Sørvágur Harbour 周邊、
+  Sandavágur Church、Trøllkonufingur，提早返回準備還車）
+
+在 8/16 或 8/22 任一天把健行標記完成，兩邊共用同一個狀態，
+**不會在 8/22 重複排同一條步道**。
+
+### 相關型別
+
+| 欄位 | 位置 | 用途 |
+|---|---|---|
+| `conditionalPlan` | `TripDay` | 主要方案（Plan A） |
+| `fallbackPlan` | `TripDay` | 備案（Plan B） |
+| `planStorageKey` | `TripDay` | 使用者手動選擇（8/16） |
+| `planDeterminedByFlag` | `TripDay` | 由完成狀態自動決定（8/22） |
+| `planId` | `ItineraryItem` | 該項目屬於哪個方案；未設 = 兩案都顯示 |
+| `completedOnAlternateDate` | `ItineraryItem` | 跨日期共用的完成旗標 |
+
+狀態全部存在 localStorage（`trip2026.plan.*`、`trip2026.done.*`），不上傳。
+Dashboard、每日時間軸、Map 頁面都會依目前生效的方案顯示。
