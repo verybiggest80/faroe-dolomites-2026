@@ -112,9 +112,16 @@ trip-app/
 沒有可靠門牌的地方，使用碼頭／村落／景點的正式名稱與行政區。
 只有一組經確認的座標（Sandavágur 小屋 62.07494, -7.15024）被寫入。
 
-**隱私。** QR code、票券序號、訂位 PIN、信用卡、護照資料一律不在程式碼裡。
-- 瀏覽器 localStorage：`/private` 頁面填寫，只存在該裝置
-- 或檔案式：複製 `src/data/private/tickets.local.example.ts` 為 `tickets.local.ts`（已 gitignore）
+**票券永不上傳。** QR code 圖檔、票券序號、訂位 PIN、鑰匙盒密碼**只存在使用者裝置的
+IndexedDB**，從未經過任何伺服器，也不在建置產物裡。
+
+因此即使網站本身是公開的，票券依然安全——票券根本不在網站中。
+
+- 加入方式：App 的 `/private` 頁面 →「加入票券」→ 從相簿選 QR 圖
+- 使用方式：行程卡上的「🎫 顯示票券」按鈕（纜車、船班、停車、住宿等）
+- 程式碼裡只有 `hasPrivateTicket` / `privateTicketId` 兩個指標，指向裝置上的槽位
+
+⚠ 這不是備份。清除瀏覽器資料會一併清掉，QR 原檔請務必留在手機相簿或 Apple Wallet。
 
 **時間。** 全部是當地時間，不做時區換算。
 法羅群島 `Atlantic/Faroe`、義大利 `Europe/Rome`、台灣 `Asia/Taipei`。

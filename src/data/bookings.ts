@@ -6,7 +6,8 @@ import type { Booking, CarRentalBooking } from '@/types/trip';
  * =========================================================================
  * 這裡只放「日期、時間、地點、必要提醒」。
  * QR code、票券序號、訂位 PIN、信用卡與護照資料一律不進這個檔案，
- * 由 src/data/private/tickets.local.ts（已 gitignore）提供。
+ * 只存在使用者裝置的 IndexedDB（見 src/data/private/store.ts）。
+ * hasPrivateTicket / privateTicketId 只是指向裝置上票券槽位的指標。
  * ========================================================================= */
 
 export const flightBookings: Booking[] = [

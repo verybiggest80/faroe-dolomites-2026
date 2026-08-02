@@ -4,6 +4,8 @@ import { CheckItem } from '@/components/CheckItem';
 import { FerryTerminalCard } from '@/components/FerryTerminalCard';
 import { DirectionsButton, LocationLink } from '@/components/LocationLink';
 import { StatusBadges } from '@/components/StatusBadge';
+import { TicketButton } from '@/components/TicketViewer';
+import { getBooking } from '@/data/bookings';
 import { CATEGORY_ICON, CATEGORY_LABEL } from '@/lib/trip';
 import { useLocalToggle } from '@/lib/useLocalToggle';
 import type { ItineraryItem } from '@/types/trip';
@@ -11,6 +13,11 @@ import type { ItineraryItem } from '@/types/trip';
 export function ItineraryItemCard({ item }: { item: ItineraryItem }) {
   const done = useLocalToggle(`item.${item.id}.done`);
   const needsAction = item.status.includes('action_required');
+
+  // 有票券的項目才顯示票券按鈕
+  const booking = item.relatedBookingId ? getBooking(item.relatedBookingId) : undefined;
+  const ticketId =
+    booking?.hasPrivateTicket && !booking.isBackupOnly ? booking.privateTicketId : undefined;
 
   return (
     <article className="relative pl-7">
@@ -70,7 +77,15 @@ export function ItineraryItemCard({ item }: { item: ItineraryItem }) {
             )}
             <div className="mt-2 flex flex-wrap gap-2">
               <DirectionsButton location={item.location} />
+              {ticketId && <TicketButton ticketId={ticketId} />}
             </div>
+          </div>
+        )}
+
+        {/* 沒有地點、但有票券的項目 */}
+        {!item.location && ticketId && (
+          <div className="mt-3">
+            <TicketButton ticketId={ticketId} />
           </div>
         )}
 

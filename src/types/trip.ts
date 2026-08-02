@@ -250,21 +250,12 @@ export interface TripTask {
 /* ------------------------------------------------------ 私人票券資料 */
 
 /**
- * 私人票券內容（QR code、序號、PIN、訂位編號）**絕對不進 repo**。
- * 這裡只定義形狀；實際值由 src/data/private/tickets.local.ts 提供，
- * 該檔案已列入 .gitignore。
+ * 私人票券內容（QR code、序號、PIN、訂位編號）**絕對不進 repo，也絕不上傳**。
+ *
+ * 實際資料存在使用者裝置的 IndexedDB，型別見 src/data/private/store.ts。
+ * 這個檔案裡只有 Booking.hasPrivateTicket / privateTicketId 兩個「指標」，
+ * 指向裝置上的票券槽位，本身不含任何票券內容。
  */
-export interface PrivateTicket {
-  id: string;
-  label: string;
-  /** 訂位編號 / 票號 */
-  reference?: string;
-  /** QR code 圖檔路徑或 data URI */
-  qrImage?: string;
-  /** 其他自由欄位 */
-  fields?: BookingDetail[];
-  fileHint?: string;
-}
 
 /* -------------------------------------------------------------- 天氣 */
 

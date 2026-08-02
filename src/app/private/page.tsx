@@ -1,156 +1,320 @@
 'use client';
 
 import { PageHeader } from '@/components/PageHeader';
+import { TicketViewer } from '@/components/TicketViewer';
 import {
   PRIVATE_TICKET_SLOTS,
-  deletePrivateTicket,
-  readPrivateTickets,
-  writePrivateTicket,
+  deleteTicket,
+  formatBytes,
+  getTicket,
+  listTickets,
+  putTicket,
+  type StoredTicket,
 } from '@/data/private/store';
-import type { PrivateTicket } from '@/types/trip';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export default function PrivatePage() {
-  const [tickets, setTickets] = useState<Record<string, PrivateTicket>>({});
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [tickets, setTickets] = useState<Record<string, StoredTicket>>({});
   const [ready, setReady] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
 
-  useEffect(() => {
-    setTickets(readPrivateTickets());
+  const refresh = useCallback(async () => {
+    const all = await listTickets();
+    const map: Record<string, StoredTicket> = {};
+    all.forEach((t) => (map[t.id] = t));
+    setTickets(map);
     setReady(true);
   }, []);
 
-  const save = (slotId: string, label: string, reference: string, note: string) => {
-    const t: PrivateTicket = {
-      id: slotId,
-      label,
-      reference: reference || undefined,
-      fields: note ? [{ label: '備註', value: note }] : undefined,
-    };
-    writePrivateTicket(t);
-    setTickets(readPrivateTickets());
-    setOpenId(null);
-  };
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  const remove = (slotId: string) => {
-    deletePrivateTicket(slotId);
-    setTickets(readPrivateTickets());
-  };
+  const usage = Object.values(tickets).reduce((s, t) => s + (t.image?.size ?? 0), 0);
+  const critical = PRIVATE_TICKET_SLOTS.filter((s) => s.critical);
+  const others = PRIVATE_TICKET_SLOTS.filter((s) => !s.critical);
+  const criticalDone = critical.filter((s) => tickets[s.id]?.image).length;
 
   return (
     <main>
       <PageHeader
         eyebrow="🔒 私人"
-        title="票券與訂位編號"
-        subtitle="這頁的內容只存在這台裝置的瀏覽器，不會上傳、不會同步、也不會進版本控制。"
+        title="票券"
+        subtitle="QR code 只存在這台裝置，不會上傳、不會同步、不在網站裡。就算有人拿到網址，也看不到這一頁的內容。"
       />
 
       <div className="px-5 pb-10">
-        <div className="card-alert mb-5 p-4">
-          <p className="text-[13px] font-semibold text-alert-text">重要</p>
-          <ul className="mt-1.5 space-y-1 text-[13px] leading-relaxed text-alert-text/85">
-            <li>· 這裡不是主要的離線備份。QR code 請另外存到手機相簿或 Wallet。</li>
-            <li>· 清除瀏覽器資料會一併清掉這頁的內容。</li>
-            <li>· 不要把信用卡號或護照號碼放進來。</li>
+        {/* 離線必備進度 */}
+        <div
+          className={`mb-5 p-4 ${
+            criticalDone === critical.length ? 'card border-good-border bg-good-bg' : 'card-alert'
+          }`}
+        >
+          <p
+            className={`text-[13px] font-semibold ${
+              criticalDone === critical.length ? 'text-good-text' : 'text-alert-text'
+            }`}
+          >
+            {criticalDone === critical.length
+              ? '✓ 四張離線必備票券都已加入'
+              : `離線必備票券：${criticalDone} / ${critical.length} 已加入`}
+          </p>
+          <p
+            className={`mt-1 text-[13px] leading-relaxed ${
+              criticalDone === critical.length ? 'text-good-text/85' : 'text-alert-text/85'
+            }`}
+          >
+            Mykines、Kalsoy、Seceda、Tre Cime 都在沒訊號的地方，票券一定要能離線打開。
+          </p>
+        </div>
+
+        {/* 警告 */}
+        <div className="mb-6 rounded-xl border border-stone2-100 bg-stone2-100/40 p-4">
+          <p className="text-[13px] font-semibold">⚠ 這裡不是備份</p>
+          <ul className="mt-1.5 space-y-1 text-[13px] leading-relaxed text-ink-soft">
+            <li>· 清除瀏覽器資料會一併清掉，請務必把 QR 原檔留在手機相簿。</li>
+            <li>· 換手機、換瀏覽器都要重新加入一次。</li>
+            <li>· 不要放信用卡號或護照號碼。</li>
           </ul>
+          {usage > 0 && (
+            <p className="mt-2 text-xs text-ink-faint">
+              目前佔用 {formatBytes(usage)}
+            </p>
+          )}
         </div>
 
         {!ready ? (
-          <p className="text-[13px] text-ink-faint">載入中…</p>
+          <p className="text-[13px] text-ink-faint">讀取中…</p>
         ) : (
-          <div className="space-y-3">
-            {PRIVATE_TICKET_SLOTS.map((slot) => {
-              const saved = tickets[slot.id];
-              const editing = openId === slot.id;
-              return (
-                <article key={slot.id} className="card p-4">
-                  <div className="flex items-start gap-2">
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-[14px] font-semibold leading-snug">{slot.label}</h2>
-                      {slot.hint && (
-                        <p className="mt-0.5 text-[11px] font-medium text-alert-text">
-                          {slot.hint}
-                        </p>
-                      )}
-                    </div>
-                    <span
-                      className={`chip ${
-                        saved
-                          ? 'border-good-border bg-good-bg text-good-text'
-                          : 'border-stone2-300 bg-white text-ink-faint'
-                      }`}
-                    >
-                      {saved ? '已填' : '空白'}
-                    </span>
-                  </div>
+          <>
+            <h2 className="section-title mb-2.5">離線必備</h2>
+            <div className="mb-8 space-y-3">
+              {critical.map((slot) => (
+                <SlotCard
+                  key={slot.id}
+                  slot={slot}
+                  ticket={tickets[slot.id]}
+                  editing={editing === slot.id}
+                  onEdit={() => setEditing(slot.id)}
+                  onCancel={() => setEditing(null)}
+                  onView={() => setViewing(slot.id)}
+                  onSaved={async () => {
+                    setEditing(null);
+                    await refresh();
+                  }}
+                />
+              ))}
+            </div>
 
-                  {saved && !editing && (
-                    <dl className="mt-3 space-y-1 border-t border-stone2-100 pt-3">
-                      {saved.reference && (
-                        <div className="flex gap-2 text-[13px]">
-                          <dt className="w-16 shrink-0 text-ink-faint">編號</dt>
-                          <dd className="break-all text-ink-soft">{saved.reference}</dd>
-                        </div>
-                      )}
-                      {saved.fields?.map((f) => (
-                        <div key={f.label} className="flex gap-2 text-[13px]">
-                          <dt className="w-16 shrink-0 text-ink-faint">{f.label}</dt>
-                          <dd className="break-words text-ink-soft">{f.value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  )}
-
-                  {editing ? (
-                    <TicketForm
-                      initial={saved}
-                      onCancel={() => setOpenId(null)}
-                      onSave={(ref, note) => save(slot.id, slot.label, ref, note)}
-                    />
-                  ) : (
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setOpenId(slot.id)}
-                        className="btn-quiet text-[13px]"
-                      >
-                        {saved ? '編輯' : '填入'}
-                      </button>
-                      {saved && (
-                        <button
-                          type="button"
-                          onClick={() => remove(slot.id)}
-                          className="btn text-[13px] text-ink-faint"
-                        >
-                          清除
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-          </div>
+            <h2 className="section-title mb-2.5">其他</h2>
+            <div className="space-y-3">
+              {others.map((slot) => (
+                <SlotCard
+                  key={slot.id}
+                  slot={slot}
+                  ticket={tickets[slot.id]}
+                  editing={editing === slot.id}
+                  onEdit={() => setEditing(slot.id)}
+                  onCancel={() => setEditing(null)}
+                  onView={() => setViewing(slot.id)}
+                  onSaved={async () => {
+                    setEditing(null);
+                    await refresh();
+                  }}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
+
+      {viewing && <TicketViewer ticketId={viewing} onClose={() => setViewing(null)} />}
     </main>
   );
 }
 
-function TicketForm({
-  initial,
-  onSave,
+/* ------------------------------------------------------------------ */
+
+function SlotCard({
+  slot,
+  ticket,
+  editing,
+  onEdit,
   onCancel,
+  onView,
+  onSaved,
 }: {
-  initial?: PrivateTicket;
-  onSave: (reference: string, note: string) => void;
+  slot: { id: string; label: string; hint?: string; critical?: boolean };
+  ticket?: StoredTicket;
+  editing: boolean;
+  onEdit: () => void;
   onCancel: () => void;
+  onView: () => void;
+  onSaved: () => void;
 }) {
-  const [reference, setReference] = useState(initial?.reference ?? '');
-  const [note, setNote] = useState(initial?.fields?.[0]?.value ?? '');
+  const hasImage = Boolean(ticket?.image);
 
   return (
-    <div className="mt-3 space-y-2 border-t border-stone2-100 pt-3">
+    <article className="card p-4">
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[14px] font-semibold leading-snug">{slot.label}</h3>
+          {slot.hint && (
+            <p
+              className={`mt-0.5 text-[11px] font-medium ${
+                slot.critical ? 'text-alert-text' : 'text-ink-faint'
+              }`}
+            >
+              {slot.hint}
+            </p>
+          )}
+        </div>
+        <span
+          className={`chip shrink-0 ${
+            hasImage
+              ? 'border-good-border bg-good-bg text-good-text'
+              : ticket
+                ? 'border-faroe-200 bg-faroe-50 text-faroe-700'
+                : 'border-stone2-300 bg-white text-ink-faint'
+          }`}
+        >
+          {hasImage ? '有 QR' : ticket ? '僅文字' : '空白'}
+        </span>
+      </div>
+
+      {ticket && !editing && (
+        <div className="mt-3 space-y-1 border-t border-stone2-100 pt-3">
+          {ticket.reference && (
+            <p className="text-[13px]">
+              <span className="text-ink-faint">編號　</span>
+              <span className="select-all break-all text-ink-soft">{ticket.reference}</span>
+            </p>
+          )}
+          {ticket.note && (
+            <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-ink-soft">
+              {ticket.note}
+            </p>
+          )}
+        </div>
+      )}
+
+      {editing ? (
+        <TicketForm slotId={slot.id} initial={ticket} onCancel={onCancel} onSaved={onSaved} />
+      ) : (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {hasImage && (
+            <button type="button" onClick={onView} className="btn-primary text-[13px]">
+              🎫 顯示
+            </button>
+          )}
+          <button type="button" onClick={onEdit} className="btn-quiet text-[13px]">
+            {ticket ? '編輯' : '加入票券'}
+          </button>
+        </div>
+      )}
+    </article>
+  );
+}
+
+function TicketForm({
+  slotId,
+  initial,
+  onCancel,
+  onSaved,
+}: {
+  slotId: string;
+  initial?: StoredTicket;
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
+  const [reference, setReference] = useState(initial?.reference ?? '');
+  const [note, setNote] = useState(initial?.note ?? '');
+  const [image, setImage] = useState<Blob | undefined>(initial?.image);
+  const [imageName, setImageName] = useState(initial?.imageName ?? '');
+  const [preview, setPreview] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!image) {
+      setPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(image);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [image]);
+
+  const pickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setImage(f);
+    setImageName(f.name);
+  };
+
+  const save = async () => {
+    setBusy(true);
+    await putTicket({
+      id: slotId,
+      reference: reference.trim() || undefined,
+      note: note.trim() || undefined,
+      image,
+      imageName: imageName || undefined,
+    });
+    setBusy(false);
+    onSaved();
+  };
+
+  const removeAll = async () => {
+    setBusy(true);
+    await deleteTicket(slotId);
+    setBusy(false);
+    onSaved();
+  };
+
+  return (
+    <div className="mt-3 space-y-3 border-t border-stone2-100 pt-3">
+      {/* QR 圖片 */}
+      <div>
+        <span className="text-[11px] font-semibold text-ink-faint">QR code 圖片</span>
+        {preview && (
+          <div className="mt-1.5 rounded-xl border border-stone2-100 p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={preview} alt="票券預覽" className="mx-auto max-h-56 rounded-lg" />
+          </div>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={pickFile}
+          className="hidden"
+        />
+        <div className="mt-1.5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="btn-quiet text-[13px]"
+          >
+            {image ? '換一張' : '從相簿選擇'}
+          </button>
+          {image && (
+            <button
+              type="button"
+              onClick={() => {
+                setImage(undefined);
+                setImageName('');
+                if (fileRef.current) fileRef.current.value = '';
+              }}
+              className="btn text-[13px] text-ink-faint"
+            >
+              移除圖片
+            </button>
+          )}
+        </div>
+      </div>
+
       <label className="block">
         <span className="text-[11px] font-semibold text-ink-faint">訂位／票券編號</span>
         <input
@@ -160,6 +324,7 @@ function TicketForm({
           placeholder="例如 ABC123"
         />
       </label>
+
       <label className="block">
         <span className="text-[11px] font-semibold text-ink-faint">備註</span>
         <textarea
@@ -170,17 +335,24 @@ function TicketForm({
           placeholder="例如：鑰匙盒密碼、車牌、聯絡電話"
         />
       </label>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => onSave(reference.trim(), note.trim())}
-          className="btn-primary text-[13px]"
-        >
-          儲存到這台裝置
+
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={save} disabled={busy} className="btn-primary text-[13px]">
+          {busy ? '儲存中…' : '存到這台裝置'}
         </button>
         <button type="button" onClick={onCancel} className="btn-quiet text-[13px]">
           取消
         </button>
+        {initial && (
+          <button
+            type="button"
+            onClick={removeAll}
+            disabled={busy}
+            className="btn text-[13px] text-ink-faint"
+          >
+            全部清除
+          </button>
+        )}
       </div>
     </div>
   );
