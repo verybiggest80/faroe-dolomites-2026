@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  @apply bg-paper text-ink antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  /* iPhone 瀏海與底部安全區 */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl2 border border-stone2-100 bg-white shadow-card;
+  }
+
+  .card-alert {
+    @apply rounded-xl2 border border-alert-border bg-alert-bg;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-colors;
+  }
+
+  .btn-primary {
+    @apply btn bg-faroe-600 text-white active:bg-faroe-700;
+  }
+
+  .btn-quiet {
+    @apply btn border border-stone2-300 bg-white text-ink-soft active:bg-stone2-100;
+  }
+
+  .section-title {
+    @apply text-[13px] font-semibold uppercase tracking-[0.14em] text-ink-faint;
+  }
+
+  .timeline-rail {
+    @apply absolute left-[7px] top-3 bottom-0 w-px bg-stone2-300;
+  }
+}
+
+/* 減少動畫：只保留最基本的過場 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
