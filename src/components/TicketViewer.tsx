@@ -1,6 +1,7 @@
 'use client';
 
-import { getTicket, slotLabel, type StoredTicket } from '@/data/private/store';
+import { getBooking } from '@/data/bookings';
+import { getTicket, slotLabel, slotOf, type StoredTicket } from '@/data/private/store';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -17,6 +18,9 @@ export function TicketViewer({
 }) {
   const [ticket, setTicket] = useState<StoredTicket | null | undefined>(undefined);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  const slot = slotOf(ticketId);
+  const meetingPoint = slot?.bookingId ? getBooking(slot.bookingId)?.location : undefined;
 
   useEffect(() => {
     let url: string | null = null;
@@ -78,18 +82,53 @@ export function TicketViewer({
 
         {ticket && (
           <>
+            {/* 快速動作：撥打導遊 / 開啟集合地點 */}
+            {(ticket.guidePhone || meetingPoint) && (
+              <div className="mb-4 flex flex-col gap-2">
+                {ticket.guidePhone && (
+                  <a href={`tel:${ticket.guidePhone}`} className="btn-primary text-[14px]">
+                    📞 撥打導遊　{ticket.guidePhone}
+                  </a>
+                )}
+                {meetingPoint && (
+                  <a
+                    href={meetingPoint.googleMapsDirectionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-quiet text-[14px]"
+                  >
+                    🧭 開啟集合地點導航
+                  </a>
+                )}
+              </div>
+            )}
+
+            {ticket.priceAmount !== undefined && (
+              <p className="mb-4 rounded-xl border border-stone2-100 bg-stone2-100/40 px-3.5 py-2.5 text-[13px]">
+                <span className="text-ink-faint">已付金額　</span>
+                <span className="font-display text-[16px] font-semibold tabular-nums">
+                  {ticket.priceAmount} {ticket.priceCurrency ?? ''}
+                </span>
+              </p>
+            )}
+
             {imageUrl ? (
               <div className="rounded-xl2 border border-stone2-100 bg-white p-3">
+                <p className="mb-2 text-[11px] font-semibold text-ink-faint">
+                  {slot?.hasGuideDetails ? '原始確認信' : 'QR code'}
+                </p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={imageUrl}
-                  alt="票券 QR code"
+                  alt={slot?.hasGuideDetails ? '訂位確認信' : '票券 QR code'}
                   className="mx-auto w-full max-w-sm rounded-lg"
                 />
               </div>
             ) : (
               <div className="card-alert p-4 text-[13px] leading-relaxed text-alert-text">
-                這張票券還沒有加入圖檔。可以到私人票券頁補上 QR code 圖片。
+                {slot?.hasGuideDetails
+                  ? '還沒有加入原始確認信。可以到私人票券頁補上確認信截圖。'
+                  : '這張票券還沒有加入圖檔。可以到私人票券頁補上 QR code 圖片。'}
               </div>
             )}
 

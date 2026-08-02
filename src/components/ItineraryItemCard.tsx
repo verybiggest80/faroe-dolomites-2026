@@ -72,8 +72,18 @@ export function ItineraryItemCard({ item }: { item: ItineraryItem }) {
         </h3>
 
         {/* 狀態 */}
-        <div className="mt-2">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <StatusBadges statuses={item.status} />
+          {item.guideRequired && (
+            <span className="chip border-faroe-200 bg-faroe-50 text-faroe-700">
+              需嚮導帶領
+            </span>
+          )}
+          {item.selfGuidedAllowed === false && (
+            <span className="chip border-alert-border bg-alert-bg text-alert-text">
+              不可自行前往
+            </span>
+          )}
         </div>
 
         {/* 地點 */}

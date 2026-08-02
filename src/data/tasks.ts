@@ -145,6 +145,41 @@ export const tasks: TripTask[] = [
     ],
   },
 
+  {
+    id: 'task-dunnesdrangar-offline',
+    title: '將 Dunnesdrangar 訂位確認信離線保存',
+    priority: 'important',
+    dueDate: '2026-08-20',
+    completed: false,
+    region: 'faroe-islands',
+    relatedBookingIds: ['tour-dunnesdrangar'],
+    description:
+      '集合點在 Sørvágur 村內，現場不一定有訊號。確認信、導遊電話與集合座標都要能離線打開。',
+    howTo: [
+      '把確認信截圖存到私人票券頁的「Dunnesdrangar 嚮導健行」',
+      '順便填入導遊電話，之後可以一鍵撥打',
+      '金額與訂單編號也填進去（只會存在這台裝置）',
+    ],
+  },
+  {
+    id: 'task-dunnesdrangar-confirm',
+    title: 'Dunnesdrangar 前一晚確認天候與是否取消',
+    priority: 'critical',
+    dueDate: '2026-08-20',
+    completed: false,
+    region: 'faroe-islands',
+    relatedItemIds: ['dunnesdrangar-guided-hike-2026-08-21'],
+    relatedBookingIds: ['tour-dunnesdrangar'],
+    description:
+      '8/21 10:00 的嚮導健行已付款。這是嚮導帶領行程，取消就是取消，不能自己走。前一晚要確認風速、能見度，並檢查有沒有收到營運方通知。',
+    howTo: [
+      '查看 Sørvágur 一帶的風速與能見度預報',
+      '檢查 email 與簡訊有沒有取消通知',
+      '把訂位確認信離線保存到私人票券頁',
+      '若取消，在 App 的 8/21 切換到備案方案（Kvívík／Vestmanna）',
+    ],
+  },
+
   /* ------------------------------------------------------ important */
   {
     id: 'task-airbnb-luggage',

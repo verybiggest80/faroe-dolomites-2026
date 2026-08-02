@@ -22,9 +22,18 @@ export interface StoredTicket {
   reference?: string;
   /** 自由備註：鑰匙盒密碼、車牌、聯絡電話 */
   note?: string;
-  /** QR code 或票券截圖 */
+  /** QR code、票券截圖或原始確認信 */
   image?: Blob;
   imageName?: string;
+
+  /* --- 私人訂位細節（PrivateBookingDetails；只存在這台裝置） --- */
+  /** 導遊／營運方電話，供「撥打導遊」按鈕使用 */
+  guidePhone?: string;
+  /** 已付金額（實際數值只存在這台裝置，不進 repo） */
+  priceAmount?: number;
+  /** 幣別代碼 */
+  priceCurrency?: string;
+
   updatedAt: number;
 }
 
@@ -34,8 +43,20 @@ export const PRIVATE_TICKET_SLOTS: {
   label: string;
   hint?: string;
   critical?: boolean;
+  /** 對應的公開 booking，用來取得集合地點與名稱 */
+  bookingId?: string;
+  /** 這個槽位要顯示導遊電話與金額欄位 */
+  hasGuideDetails?: boolean;
 }[] = [
   { id: 'tour-mykines', label: 'Mykines Tour 船票', hint: '8/18 · 離線必備', critical: true },
+  {
+    id: 'tour-dunnesdrangar',
+    label: 'Dunnesdrangar 嚮導健行',
+    hint: '8/21 10:00 · 含導遊電話與金額',
+    critical: true,
+    bookingId: 'tour-dunnesdrangar',
+    hasGuideDetails: true,
+  },
   { id: 'ferry-kalsoy', label: 'Kalsoy Route 56 船票', hint: '8/19 · 含車牌 · 離線必備', critical: true },
   { id: 'cable-seceda', label: 'Seceda 纜車票 × 2', hint: '8/25 08:30 · 離線必備', critical: true },
   { id: 'parking-tre-cime', label: 'Tre Cime 停車票', hint: '8/28 06:00 · 離線必備', critical: true },
@@ -57,6 +78,10 @@ export const PRIVATE_TICKET_SLOTS: {
 
 export function slotLabel(id: string): string {
   return PRIVATE_TICKET_SLOTS.find((s) => s.id === id)?.label ?? id;
+}
+
+export function slotOf(id: string) {
+  return PRIVATE_TICKET_SLOTS.find((s) => s.id === id);
 }
 
 /* ------------------------------------------------------------ IndexedDB */

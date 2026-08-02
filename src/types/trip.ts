@@ -166,6 +166,15 @@ export interface ItineraryItem {
   badWeatherFallback?: string[];
   relatedBookingId?: string;
   ferry?: FerryTerminalInfo;
+  /* ------------------------------------------- 嚮導行程專用 */
+
+  /** 這個活動會受天候影響（可能被營運方取消） */
+  weatherSensitive?: boolean;
+  /** 必須由嚮導帶領 */
+  guideRequired?: boolean;
+  /** 是否允許自行前往（嚮導行程一律 false） */
+  selfGuidedAllowed?: boolean;
+
   isPrivate?: boolean;
   /**
    * 這個項目屬於哪一個 DayPlan。
@@ -305,6 +314,24 @@ export interface TripTask {
  * 這個檔案裡只有 Booking.hasPrivateTicket / privateTicketId 兩個「指標」，
  * 指向裝置上的票券槽位，本身不含任何票券內容。
  */
+
+/**
+ * 私人訂位細節 —— 導遊電話、訂單編號、付款金額、旅客聯絡資料。
+ *
+ * ⚠ 這些欄位**永遠不會**出現在 itinerary data、公開 Dashboard、
+ *   或任何進入 git 的靜態檔案。實際值只存在使用者裝置的 IndexedDB。
+ *   這裡只是型別定義。
+ */
+export interface PrivateBookingDetails {
+  bookingId?: string;
+  guidePhone?: string;
+  travellerContact?: string;
+  totalPrice?: {
+    amount: number;
+    currency: string;
+  };
+  privateNotes?: string[];
+}
 
 /* -------------------------------------------------------------- 天氣 */
 

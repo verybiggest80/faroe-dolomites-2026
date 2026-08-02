@@ -145,7 +145,14 @@ function SlotCard({
   onView,
   onSaved,
 }: {
-  slot: { id: string; label: string; hint?: string; critical?: boolean };
+  slot: {
+    id: string;
+    label: string;
+    hint?: string;
+    critical?: boolean;
+    bookingId?: string;
+    hasGuideDetails?: boolean;
+  };
   ticket?: StoredTicket;
   editing: boolean;
   onEdit: () => void;
@@ -200,7 +207,13 @@ function SlotCard({
       )}
 
       {editing ? (
-        <TicketForm slotId={slot.id} initial={ticket} onCancel={onCancel} onSaved={onSaved} />
+        <TicketForm
+          slotId={slot.id}
+          initial={ticket}
+          hasGuideDetails={slot.hasGuideDetails}
+          onCancel={onCancel}
+          onSaved={onSaved}
+        />
       ) : (
         <div className="mt-3 flex flex-wrap gap-2">
           {hasImage && (
@@ -220,16 +233,23 @@ function SlotCard({
 function TicketForm({
   slotId,
   initial,
+  hasGuideDetails,
   onCancel,
   onSaved,
 }: {
   slotId: string;
   initial?: StoredTicket;
+  hasGuideDetails?: boolean;
   onCancel: () => void;
   onSaved: () => void;
 }) {
   const [reference, setReference] = useState(initial?.reference ?? '');
   const [note, setNote] = useState(initial?.note ?? '');
+  const [guidePhone, setGuidePhone] = useState(initial?.guidePhone ?? '');
+  const [priceAmount, setPriceAmount] = useState(
+    initial?.priceAmount !== undefined ? String(initial.priceAmount) : ''
+  );
+  const [priceCurrency, setPriceCurrency] = useState(initial?.priceCurrency ?? 'DKK');
   const [image, setImage] = useState<Blob | undefined>(initial?.image);
   const [imageName, setImageName] = useState(initial?.imageName ?? '');
   const [preview, setPreview] = useState<string | null>(null);
@@ -255,12 +275,18 @@ function TicketForm({
 
   const save = async () => {
     setBusy(true);
+    const amount = Number.parseFloat(priceAmount);
     await putTicket({
       id: slotId,
       reference: reference.trim() || undefined,
       note: note.trim() || undefined,
       image,
       imageName: imageName || undefined,
+      guidePhone: guidePhone.trim() || undefined,
+      priceAmount: Number.isFinite(amount) ? amount : undefined,
+      priceCurrency: Number.isFinite(amount)
+        ? priceCurrency.trim() || undefined
+        : undefined,
     });
     setBusy(false);
     onSaved();
@@ -325,6 +351,45 @@ function TicketForm({
         />
       </label>
 
+      {hasGuideDetails && (
+        <>
+          <label className="block">
+            <span className="text-[11px] font-semibold text-ink-faint">
+              導遊／營運方電話
+            </span>
+            <input
+              value={guidePhone}
+              onChange={(e) => setGuidePhone(e.target.value)}
+              type="tel"
+              inputMode="tel"
+              className="mt-1 w-full rounded-xl border border-stone2-300 px-3 py-2 text-[14px]"
+              placeholder="填了就會出現「撥打導遊」按鈕"
+            />
+          </label>
+
+          <div className="flex gap-2">
+            <label className="flex-1">
+              <span className="text-[11px] font-semibold text-ink-faint">已付金額</span>
+              <input
+                value={priceAmount}
+                onChange={(e) => setPriceAmount(e.target.value)}
+                inputMode="decimal"
+                className="mt-1 w-full rounded-xl border border-stone2-300 px-3 py-2 text-[14px]"
+                placeholder="總計"
+              />
+            </label>
+            <label className="w-24">
+              <span className="text-[11px] font-semibold text-ink-faint">幣別</span>
+              <input
+                value={priceCurrency}
+                onChange={(e) => setPriceCurrency(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-stone2-300 px-3 py-2 text-[14px]"
+              />
+            </label>
+          </div>
+        </>
+      )}
+
       <label className="block">
         <span className="text-[11px] font-semibold text-ink-faint">備註</span>
         <textarea
@@ -332,7 +397,7 @@ function TicketForm({
           onChange={(e) => setNote(e.target.value)}
           rows={2}
           className="mt-1 w-full rounded-xl border border-stone2-300 px-3 py-2 text-[14px]"
-          placeholder="例如：鑰匙盒密碼、車牌、聯絡電話"
+          placeholder="例如：鑰匙盒密碼、車牌、費用明細"
         />
       </label>
 

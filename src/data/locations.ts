@@ -375,6 +375,27 @@ export const locations = L({
     kind: 'viewpoint',
     hint: '依風勢決定是否步行前往。',
   },
+  dunnesdrangarMeeting: {
+    id: 'dunnesdrangarMeeting',
+    name: 'Dunnesdrangar Hike Meeting Point（Alvalon 幼兒園外）',
+    address: 'Kjóadalsvegur 2, Sørvágur, Vágar, Faroe Islands',
+    // 座標優先：只搜尋 Dunnesdrangar 會導到海崖，不是集合點
+    googleMapsQuery: '62.068611,-7.299806',
+    latitude: 62.068611,
+    longitude: -7.299806,
+    region: 'faroe-islands',
+    kind: 'trailhead',
+    hint: '集合點在 Sørvágur 村內 Alvalon kindergarten 外，不是 Dunnesdrangar 海崖終點。原始座標 62°04\'07.0"N 7°17\'59.3"W。務必用座標導航。',
+  },
+  sorvagurRestaurants: {
+    id: 'sorvagurRestaurants',
+    name: 'Sørvágur 餐廳',
+    address: 'Sørvágur, Vágar, Faroe Islands',
+    googleMapsQuery: 'restaurants Sørvágur Faroe Islands',
+    region: 'faroe-islands',
+    kind: 'restaurant',
+    hint: '未預訂，現場自行選擇。',
+  },
   sandavagurChurch: {
     id: 'sandavagurChurch',
     name: 'Sandavágur Church',
