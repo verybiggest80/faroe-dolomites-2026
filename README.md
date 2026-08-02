@@ -19,28 +19,45 @@ npm run dev
 
 打開 http://localhost:3000
 
-正式建置：
+正式建置（產生純靜態檔案到 `out/`）：
 
 ```bash
 npm run build
 ```
 
+在本機預覽建置結果：
+
 ```bash
-npm start
+npm run preview
 ```
 
-Service worker（離線功能）只在 `npm run build` + `npm start` 的正式模式啟用，
-`npm run dev` 不會註冊，避免快取干擾開發。
+Service worker（離線功能）只在建置後的正式版啟用，`npm run dev` 不會註冊，
+避免快取干擾開發。
+
+## 部署到 GitHub Pages
+
+`.github/workflows/deploy.yml` 已設定好，推到 `main` 分支就會自動建置並部署。
+
+`basePath` 由 workflow 從 repo 名稱自動帶入（`NEXT_PUBLIC_BASE_PATH`），
+所以 repo 取什麼名字都不用改程式碼。
+
+首次部署後，到 GitHub repo 的 **Settings → Pages**，把 Source 設為
+**GitHub Actions**。
+
+要在本機模擬 GitHub Pages 的子路徑：
+
+```bash
+NEXT_PUBLIC_BASE_PATH=/你的repo名 npm run build
+```
 
 ### 安裝到 iPhone 主畫面
 
-1. 手機與電腦連同一個 Wi-Fi
-2. 電腦上執行 `npm run dev -- -H 0.0.0.0`，記下電腦的區網 IP
-3. iPhone Safari 開 `http://<電腦IP>:3000`
-4. 分享 → 加入主畫面
+部署完成後，用 iPhone Safari 開部署網址 → 分享 → 加入主畫面。
+之後即使沒訊號，看過的頁面都還打得開。
 
-要真正離線可用（含 service worker），需要 HTTPS。最簡單的方式是部署到 Vercel
-之類的靜態託管，再從手機開該網址加入主畫面。
+⚠ GitHub Pages 免費方案的網站一律是公開的（就算 repo 設為 private）。
+行程的日期、時間、地點會公開；QR code、訂位編號、鑰匙盒密碼不會，
+那些只存在裝置的 localStorage。
 
 ---
 
