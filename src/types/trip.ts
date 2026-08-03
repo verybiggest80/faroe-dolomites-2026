@@ -144,6 +144,16 @@ export interface DayPlan {
   itemIds: string[];
 }
 
+/* ------------------------------------------------------ 外部連結 */
+
+/** 行程或待辦上的外部連結（官方網站、線上表單等） */
+export interface ItemLink {
+  label: string;
+  url: string;
+  /** 給使用者的一句說明 */
+  hint?: string;
+}
+
 /* ---------------------------------------------------------------- 行程 */
 
 export interface ItineraryItem {
@@ -162,6 +172,8 @@ export interface ItineraryItem {
   /** 同一項目牽涉多個地點時（例如市區散步的多個點） */
   extraLocations?: TripLocation[];
   notes?: string[];
+  /** 官方網站、線上表單等外部連結 */
+  links?: ItemLink[];
   previousNightChecklist?: string[];
   badWeatherFallback?: string[];
   relatedBookingId?: string;
@@ -302,6 +314,8 @@ export interface TripTask {
   description?: string;
   /** 建議處理方式 */
   howTo?: string[];
+  /** 官方網站、線上表單等外部連結 */
+  links?: ItemLink[];
   region?: TripRegion;
 }
 

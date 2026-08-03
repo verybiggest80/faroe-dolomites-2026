@@ -62,6 +62,26 @@ function TaskCard({ task, critical }: { task: TripTask; critical: boolean }) {
         </p>
       )}
 
+      {task.links && task.links.length > 0 && (
+        <div className="mt-2.5 space-y-2 pl-[28px]">
+          {task.links.map((link) => (
+            <div key={link.url}>
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary w-full text-[13px]"
+              >
+                🔗 {link.label}
+              </a>
+              {link.hint && (
+                <p className="mt-1 text-center text-[11px] text-ink-faint">{link.hint}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {task.howTo && task.howTo.length > 0 && (
         <div className="mt-2 pl-[28px]">
           <div className="text-[11px] font-semibold text-ink-faint">怎麼做</div>

@@ -136,6 +136,27 @@ export function ItineraryItemCard({ item }: { item: ItineraryItem }) {
           </div>
         )}
 
+        {/* 外部連結 */}
+        {item.links && item.links.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {item.links.map((link) => (
+              <div key={link.url}>
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary w-full text-[13px]"
+                >
+                  🔗 {link.label}
+                </a>
+                {link.hint && (
+                  <p className="mt-1 text-center text-[11px] text-ink-faint">{link.hint}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* 備註 */}
         {item.notes && item.notes.length > 0 && (
           <ul className="mt-3 space-y-1 border-t border-stone2-100 pt-3">

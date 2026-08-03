@@ -375,6 +375,11 @@ export const tripDays: TripDay[] = [
     timezone: 'Europe/Rome',
     summary: '車輛已於 8/29 歸還，本日沒有任何租車活動。',
     accommodationBookingId: null,
+    previousNightChecklist: [
+      '兩人的泰國電子入境卡（TDAC）都已完成並截圖',
+      '登機證已下載',
+      '護照與所有票券隨身',
+    ],
   }),
   day({
     date: '2026-08-31',
@@ -2101,6 +2106,30 @@ export const itinerary: ItineraryItem[] = [
     location: l.vallaressoVaporetto,
     extraLocations: [l.sanZaccariaVaporetto, l.piazzaleRomaVaporetto],
     notes: ['從 San Marco Vallaresso 或 San Zaccaria 上船'],
+  },
+  {
+    id: 'task-tdac-29',
+    date: '2026-08-29',
+    startTime: '20:30',
+    title: '填寫泰國電子入境卡（TDAC）',
+    category: 'task',
+    region: 'venice',
+    status: ['action_required'],
+    displayOnDashboard: true,
+    links: [
+      {
+        label: '開啟泰國移民署 TDAC 填寫頁',
+        url: 'https://tdac.immigration.go.th/arrival-card/#/home',
+        hint: '泰國移民署官方網站',
+      },
+    ],
+    notes: [
+      '回到飯店有 Wi-Fi 再填，不要在威尼斯路上用手機硬填',
+      '兩個人都要各自填一份',
+      '需要護照資料、班機編號（TG901）與抵達日期 8/31',
+      '填完把確認畫面截圖存到手機，落地時不一定有網路',
+      'TDAC 可在抵達前 3 天內提交，8/29 填正好在期限內',
+    ],
   },
   {
     id: 'h-catessera-2',

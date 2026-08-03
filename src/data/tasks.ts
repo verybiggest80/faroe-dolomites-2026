@@ -146,6 +146,30 @@ export const tasks: TripTask[] = [
   },
 
   {
+    id: 'task-tdac',
+    title: '8/29 填寫泰國電子入境卡（TDAC）',
+    priority: 'critical',
+    dueDate: '2026-08-29',
+    completed: false,
+    region: 'transit',
+    relatedItemIds: ['task-tdac-29'],
+    description:
+      '8/31 清晨在曼谷轉機。TDAC 只能在抵達前 3 天內提交，8/29 晚上填正好在期限內。兩個人都要各自填一份。',
+    links: [
+      {
+        label: '開啟泰國移民署 TDAC 填寫頁',
+        url: 'https://tdac.immigration.go.th/arrival-card/#/home',
+        hint: '泰國移民署官方網站',
+      },
+    ],
+    howTo: [
+      '回到 Ca\' Tessera 有 Wi-Fi 再填',
+      '準備護照資料、班機編號 TG901、抵達日期 2026-08-31',
+      '兩人各填一份',
+      '填完截圖存手機，落地時不一定有網路',
+    ],
+  },
+  {
     id: 'task-dunnesdrangar-offline',
     title: '將 Dunnesdrangar 訂位確認信離線保存',
     priority: 'important',
