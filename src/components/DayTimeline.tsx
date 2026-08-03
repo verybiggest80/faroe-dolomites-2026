@@ -1,19 +1,20 @@
 'use client';
 
-import { CheckItem } from '@/components/CheckItem';
 import { ItineraryItemCard } from '@/components/ItineraryItemCard';
+import { NextDayPrep, PendingReminders } from '@/components/NightBeforeReminders';
 import { PlanSwitcher } from '@/components/PlanSwitcher';
 import { useDayPlan } from '@/lib/planState';
-import {
-  badWeatherFallbackFor,
-  getDay,
-  itemsForDate,
-  previousNightChecklistFor,
-} from '@/lib/trip';
+import { badWeatherFallbackFor, getDay, itemsForDate } from '@/lib/trip';
 
 /**
  * 每日時間軸。
- * 條件式行程（8/16、8/22）會依目前生效的方案切換內容。
+ *
+ * 版面順序：
+ *   1. 昨晚沒完成的提醒（只在有漏勾時出現）
+ *   2. 方案切換（條件式行程才有）
+ *   3. 時間軸
+ *   4. 雨天備案
+ *   5. 今晚要為「明天」做完的準備
  */
 export function DayTimeline({ date }: { date: string }) {
   const day = getDay(date);
@@ -21,18 +22,22 @@ export function DayTimeline({ date }: { date: string }) {
 
   const items = itemsForDate(date, plan.activePlanId);
   const fallback = badWeatherFallbackFor(date, plan.activePlanId);
-  const tonight = previousNightChecklistFor(date, plan.activePlanId);
+  const nextDate = nextDateOf(date);
+  const hasNextDay = Boolean(getDay(nextDate));
 
   return (
     <>
-      {/* 方案切換 */}
+      {/* 1. 昨晚沒完成的提醒 */}
+      <PendingReminders date={date} />
+
+      {/* 2. 方案切換 */}
       {plan.mode !== 'none' && (
         <div className="px-5 pt-5">
           <PlanSwitcher date={date} compact />
         </div>
       )}
 
-      {/* 時間軸 */}
+      {/* 3. 時間軸 */}
       <div className="relative px-5 py-7">
         {items.length > 0 && <span aria-hidden="true" className="timeline-rail left-[27px]" />}
         <div className="space-y-4">
@@ -47,23 +52,9 @@ export function DayTimeline({ date }: { date: string }) {
         </div>
       </div>
 
-      {/* 整日層級：前一晚提醒 */}
-      {tonight.length > 0 && (
-        <section className="px-5 pb-7">
-          <h2 className="section-title mb-2.5">出發前一晚的提醒（本日）</h2>
-          <div className="card-alert p-4">
-            <div className="divide-y divide-alert-border/40">
-              {tonight.map((c, i) => (
-                <CheckItem key={c} storageKey={`day.${date}.pn.${i}`} label={c} emphasis />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 整日層級：雨天備案 */}
+      {/* 4. 雨天備案 */}
       {fallback.length > 0 && (
-        <section className="px-5 pb-10">
+        <section className="px-5 pb-7">
           <h2 className="section-title mb-2.5">雨天／壞天氣備案</h2>
           <div className="card p-4">
             <ul className="space-y-1.5">
@@ -85,6 +76,17 @@ export function DayTimeline({ date }: { date: string }) {
           </div>
         </section>
       )}
+
+      {/* 5. 今晚要為明天做完的準備 */}
+      {hasNextDay && <NextDayPrep targetDate={nextDate} />}
     </>
   );
+}
+
+function nextDateOf(date: string): string {
+  const [y, m, d] = date.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + 1);
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${dt.getFullYear()}-${mm}-${dd}`;
 }

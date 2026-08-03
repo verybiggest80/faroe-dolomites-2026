@@ -26,9 +26,10 @@ import {
   previousNightChecklistFor,
   risksForDate,
 } from '@/lib/trip';
+import { PackingList } from '@/components/PackingList';
 import { PlanSwitcher } from '@/components/PlanSwitcher';
 import { useDayPlan } from '@/lib/planState';
-import { criticalTasks } from '@/data/tasks';
+import { checklistKey } from '@/lib/useLocalToggle';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { ItineraryItem } from '@/types/trip';
@@ -67,7 +68,6 @@ function Dashboard({ today, nowMin }: { today: string; nowMin: number }) {
   const risks = risksForDate(focusDate, plan.activePlanId);
   const fallback = badWeatherFallbackFor(focusDate, plan.activePlanId);
   const tonight = previousNightChecklistFor(nextDay, nextDayPlan.activePlanId);
-  const openCritical = criticalTasks;
 
   return (
     <main>
@@ -107,25 +107,9 @@ function Dashboard({ today, nowMin }: { today: string; nowMin: number }) {
         {/* -------------------------------------------- 條件式方案 */}
         {plan.mode !== 'none' && <PlanSwitcher date={focusDate} compact />}
 
-        {/* -------------------------------------------- Critical 待辦 */}
-        <Section title="出發前必辦" action={{ href: '/tasks', label: '全部待辦' }}>
-          <div className="card-alert p-4">
-            <p className="text-[13px] font-semibold text-alert-text">
-              這 {openCritical.length} 件沒處理，行程會卡住
-            </p>
-            <div className="mt-2 divide-y divide-alert-border/40">
-              {openCritical.map((t) => (
-                <div key={t.id}>
-                  <CheckItem storageKey={`task.${t.id}`} label={t.title} emphasis />
-                  {t.dueDate && (
-                    <p className="pb-1.5 pl-[28px] text-[11px] text-alert-text/70">
-                      最晚 {shortDate(t.dueDate)} 前完成
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* -------------------------------------------- 行李清單 */}
+        <Section title="行李清單">
+          <PackingList />
         </Section>
 
         {/* -------------------------------------------- 下一個活動 */}
@@ -219,13 +203,24 @@ function Dashboard({ today, nowMin }: { today: string; nowMin: number }) {
 
         {/* -------------------------------------------- 今晚要做的事 */}
         {tonight.length > 0 && (
-          <Section title={`今晚要做（為 ${shortDate(nextDay)} 做準備）`}>
-            <div className="card p-4">
-              <div className="divide-y divide-stone2-100">
-                {tonight.map((c, idx) => (
-                  <CheckItem key={c} storageKey={`pn.${nextDay}.${idx}`} label={c} />
+          <Section
+            title={`今晚要做完（為 ${shortDate(nextDay)} 做準備）`}
+            action={{ href: `/day/${focusDate}`, label: '在行程頁看' }}
+          >
+            <div className="card-alert p-4">
+              <div className="divide-y divide-alert-border/40">
+                {tonight.map((c) => (
+                  <CheckItem
+                    key={c}
+                    storageKey={checklistKey(nextDay, c)}
+                    label={c}
+                    emphasis
+                  />
                 ))}
               </div>
+              <p className="mt-2 border-t border-alert-border/40 pt-2 text-[11px] leading-relaxed text-alert-text/75">
+                沒勾完的項目，明天會出現在行程最上方。
+              </p>
             </div>
           </Section>
         )}
